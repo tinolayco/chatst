@@ -1,6 +1,8 @@
 # Chat Streamlit + WebSocket
 
-Cette application permet d'echanger des messages en temps reel entre deux navigateurs via une interface Streamlit et un serveur WebSocket Python.
+Cette application permet d'echanger des messages en temps reel entre deux navigateurs via une interface Streamlit et un serveur WebSocket Python. Elle prend en charge les messages publics dans un salon ainsi que les messages prives entre utilisateurs connectes au meme salon.
+
+Le frontend de chat est maintenant implemente comme un composant Streamlit local dans [chat_ui_component/__init__.py](chat_ui_component/__init__.py) avec ses fichiers frontend separes dans [chat_ui_component/frontend/index.html](chat_ui_component/frontend/index.html), [chat_ui_component/frontend/styles.css](chat_ui_component/frontend/styles.css) et [chat_ui_component/frontend/main.js](chat_ui_component/frontend/main.js).
 
 ## Installation
 
@@ -39,6 +41,13 @@ streamlit run app.py --server.port 8501
 Le fichier .streamlit/secrets.toml est optionnel. Avec la configuration actuelle, l'application utilise automatiquement ws://localhost:9876/ws. Sans ce fichier, l'application utilise automatiquement ws://localhost:8765/ws par defaut.
 
 Ouvrir ensuite l'application dans deux navigateurs ou deux onglets, saisir le meme salon, puis envoyer des messages.
+
+## Utilisation
+
+- Chaque utilisateur choisit un pseudo dans un salon donne.
+- Le mode Message public diffuse le message a tous les participants du salon.
+- Le mode Message prive affiche la liste des autres utilisateurs connectes et envoie le message uniquement au destinataire choisi.
+- Deux utilisateurs ne peuvent pas utiliser le meme pseudo dans le meme salon.
 
 ## Notes
 

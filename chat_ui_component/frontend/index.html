@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat UI Component</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <div class="header">
+        <div class="title">
+          <strong id="roomLabel">Salon</strong>
+          <span id="usernameLabel">Utilisateur</span>
+        </div>
+        <div id="status" class="status">Connexion...</div>
+      </div>
+
+      <div id="messages"></div>
+
+      <div class="composer">
+        <div class="composer-tools">
+          <select id="modeSelect" title="Mode d'envoi">
+            <option value="message">Message public</option>
+            <option value="private">Message prive</option>
+          </select>
+          <select id="recipientSelect" hidden title="Destinataire du message prive">
+            <option value="">Choisissez un destinataire</option>
+          </select>
+        </div>
+        <div class="composer-main">
+          <textarea id="messageInput" placeholder="Tapez un message puis validez..."></textarea>
+          <button id="sendButton">Envoyer</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="main.js"></script>
+  </body>
+</html>
