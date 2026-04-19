@@ -1,3 +1,17 @@
+"""Interface Streamlit du chat temps reel.
+
+Ce fichier ne contient pas le serveur WebSocket lui-meme. Son role est de :
+- configurer la page Streamlit ;
+- recuperer les informations de connexion utiles a l'utilisateur ;
+- lire l'URL du backend WebSocket depuis les secrets Streamlit ;
+- injecter un composant HTML/JavaScript autonome qui ouvre la WebSocket,
+  affiche les messages et envoie les nouveaux messages.
+
+Le choix d'utiliser `components.html` permet de garder Streamlit comme couche UI
+simple, tout en deleguant la communication temps reel a un client JavaScript
+embarque dans la page.
+"""
+
 from __future__ import annotations
 
 import streamlit as st
@@ -16,14 +30,25 @@ st.caption("Ouvrez cette page dans deux navigateurs ou deux onglets et rejoignez
 
 
 def get_default_ws_url() -> str:
-    try:
-        return st.secrets["websocket_url"]
-    except (KeyError, StreamlitSecretNotFoundError):
-        return "ws://localhost:8765/ws"
+  """Retourne l'URL WebSocket configuree pour l'application.
+
+  Streamlit expose les secrets via `st.secrets`, mais l'acces peut lever une
+  exception si aucun fichier `.streamlit/secrets.toml` n'est present. Cette
+  fonction centralise donc la lecture de `websocket_url` et applique un
+  fallback local raisonnable pour le developpement.
+  """
+
+  try:
+    return st.secrets["websocket_url"]
+  except (KeyError, StreamlitSecretNotFoundError):
+    return "ws://localhost:8765/ws"
 
 
 default_ws_url = get_default_ws_url()
 
+# La sidebar ne contient que les informations encore pertinentes cote UI.
+# L'adresse du backend est imposee par la configuration serveur et n'est plus
+# editable depuis l'interface.
 with st.sidebar:
     st.header("Connexion")
     room = st.text_input("Nom du salon", value="demo")
@@ -35,6 +60,9 @@ with st.sidebar:
     )
 
 
+# Le composant HTML embarque contient tout le client de chat : structure,
+# styles et logique JavaScript WebSocket. Les valeurs Streamlit sont injectees
+# dans la chaine pour personnaliser le salon, le pseudo et l'URL du backend.
 chat_component = f"""
 <!DOCTYPE html>
 <html lang="fr">
@@ -225,12 +253,15 @@ chat_component = f"""
   <script>
     const room = {room!r};
     const username = {username!r};
+    // wsBase contient la base configuree, par exemple ws://localhost:9876/ws.
+    // Le nom du salon est ajoute ensuite pour construire l'URL finale.
     const wsBase = {ws_url!r}.replace(/\/$/, "");
     const statusNode = document.getElementById("status");
     const messagesNode = document.getElementById("messages");
     const inputNode = document.getElementById("messageInput");
     const sendButton = document.getElementById("sendButton");
 
+    // Une connexion WebSocket par onglet et par salon.
     const socket = new WebSocket(`${{wsBase}}/${{encodeURIComponent(room)}}`);
 
     const setStatus = (text) => {{
@@ -243,6 +274,8 @@ chat_component = f"""
 
     const addMessage = (payload) => {{
       const wrapper = document.createElement("div");
+      // Les messages systeme sont centres. Les messages utilisateur sont
+      // alignes a gauche ou a droite selon leur auteur.
       const type = payload.type === "system" ? "system" : (payload.username === username ? "self" : "other");
       wrapper.className = `message ${{type}}`;
 
@@ -266,6 +299,7 @@ chat_component = f"""
         return;
       }}
 
+      // Le backend attend un JSON simple contenant le type, l'auteur et le texte.
       socket.send(JSON.stringify({{
         type: "message",
         username,
@@ -296,6 +330,7 @@ chat_component = f"""
         const payload = JSON.parse(event.data);
         addMessage(payload);
       }} catch (error) {{
+        // Le client reste resilient si le backend renvoie un message invalide.
         addMessage({{ type: "system", message: "Message invalide recu.", username: "system" }});
       }}
     }});
@@ -314,8 +349,11 @@ chat_component = f"""
 </html>
 """
 
+# Streamlit affiche le client HTML dans un iframe. La hauteur doit rester assez
+# grande pour le chat, tout en laissant de la place au reste de la page.
 components.html(chat_component, height=560, scrolling=False)
 
+# Ce bloc rappelle les commandes de lancement utiles pendant le developpement.
 st.markdown("### Lancement")
 st.code(
     "uvicorn websocket_server:app --host 0.0.0.0 --port 8765\nstreamlit run app.py --server.port 8501"
