@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>One Pager - Chat Streamlit + WebSocket</title>
+  <style>
+    :root {
+      --bg: #f5efe6;
+      --bg-alt: #fffaf3;
+      --panel: rgba(255, 252, 247, 0.9);
+      --text: #1d1f21;
+      --muted: #5f6368;
+      --line: rgba(29, 31, 33, 0.12);
+      --teal: #0f766e;
+      --blue: #1d4ed8;
+      --amber: #c27803;
+      --shadow: 0 20px 60px rgba(29, 31, 33, 0.12);
+      --radius: 24px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(15, 118, 110, 0.12), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(29, 78, 216, 0.12), transparent 28%),
+        linear-gradient(180deg, var(--bg-alt), var(--bg));
+      line-height: 1.5;
+    }
+
+    .page {
+      width: min(1120px, calc(100% - 32px));
+      margin: 32px auto 48px;
+    }
+
+    .hero,
+    .section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero {
+      padding: 32px;
+      display: grid;
+      gap: 24px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(15, 118, 110, 0.1);
+      color: var(--teal);
+      font-size: 0.9rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0;
+      font-weight: 600;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      line-height: 1.05;
+      max-width: 14ch;
+    }
+
+    h2 {
+      font-size: clamp(1.4rem, 2vw, 2rem);
+      margin-bottom: 14px;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.02rem;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      padding: 18px;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .card-spaced {
+      margin-top: 16px;
+    }
+
+    .card strong,
+    .step strong,
+    .timeline strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .section {
+      padding: 28px;
+      margin-top: 22px;
+    }
+
+    .steps {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      gap: 14px;
+      align-items: start;
+      padding: 16px;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.76);
+    }
+
+    .num {
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--teal), var(--blue));
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .code {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 20px;
+      background: #1f2430;
+      color: #eef2ff;
+      overflow-x: auto;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.95rem;
+      white-space: pre-wrap;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .timeline {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .timeline > div {
+      border-left: 3px solid rgba(29, 78, 216, 0.22);
+      padding: 4px 0 4px 14px;
+    }
+
+    .files {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .file {
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.74);
+    }
+
+    .file code,
+    .inline-code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+
+    .callout {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: rgba(194, 120, 3, 0.1);
+      border: 1px solid rgba(194, 120, 3, 0.2);
+      color: #6c4a02;
+    }
+
+    ul {
+      margin: 14px 0 0;
+      padding-left: 20px;
+      color: var(--muted);
+    }
+
+    li + li {
+      margin-top: 8px;
+    }
+
+    @media (max-width: 860px) {
+      .summary,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .page {
+        width: min(100% - 20px, 1120px);
+        margin: 12px auto 24px;
+      }
+
+      .hero,
+      .section {
+        padding: 20px;
+        border-radius: 20px;
+      }
+
+      .step {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div>
+        <span class="eyebrow">One Pager Projet</span>
+        <h1>Comment fonctionne le chat Streamlit + WebSocket</h1>
+      </div>
+
+      <p>
+        Ce projet sépare l'interface utilisateur et le transport temps réel. Streamlit affiche l'écran de chat,
+        mais les messages transitent en direct par un serveur WebSocket FastAPI lancé avec Uvicorn.
+      </p>
+
+      <div class="summary">
+        <article class="card">
+          <strong>Interface</strong>
+          <p>Streamlit rend la page, lit l'URL WebSocket depuis le secret et injecte un composant HTML + JavaScript pour ouvrir la connexion.</p>
+        </article>
+        <article class="card">
+          <strong>Transport</strong>
+          <p>FastAPI maintient une liste de connexions par salon et diffuse chaque message à tous les navigateurs du salon.</p>
+        </article>
+        <article class="card">
+          <strong>Usage</strong>
+          <p>Le lancement standard se fait via start.ps1, puis deux onglets avec le meme salon suffisent pour voir les messages en temps reel.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Architecture en clair</h2>
+      <div class="grid">
+        <div>
+          <div class="steps">
+            <article class="step">
+              <div class="num">1</div>
+              <div>
+                <strong>Le script de demarrage lance les deux services</strong>
+                <p>Le fichier start.ps1 lit .streamlit/secrets.toml si present, recupere le port WebSocket puis ouvre Uvicorn et Streamlit dans deux fenetres PowerShell.</p>
+              </div>
+            </article>
+            <article class="step">
+              <div class="num">2</div>
+              <div>
+                <strong>Le navigateur ouvre Streamlit</strong>
+                <p>L'utilisateur charge l'application Streamlit puis choisit un salon et un pseudo. L'URL du serveur WebSocket vient du secret, sans saisie manuelle dans l'interface.</p>
+              </div>
+            </article>
+            <article class="step">
+              <div class="num">3</div>
+              <div>
+                <strong>Streamlit injecte un mini client chat</strong>
+                <p>Le fichier app.py génère une page HTML embarquée avec JavaScript. Ce script crée une WebSocket vers /ws/{room}.</p>
+              </div>
+            </article>
+            <article class="step">
+              <div class="num">4</div>
+              <div>
+                <strong>Le serveur rattache la connexion à un salon</strong>
+                <p>Le serveur websocket_server.py accepte la connexion, stocke le client dans une liste propre au salon, puis annonce l'arrivée.</p>
+              </div>
+            </article>
+            <article class="step">
+              <div class="num">5</div>
+              <div>
+                <strong>Chaque message est diffusé</strong>
+                <p>Quand un client envoie un JSON, le serveur le redistribue à tous les clients connectés dans le même salon.</p>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <aside>
+          <div class="card">
+            <strong>Commande recommandee</strong>
+            <div class="code">.\start.ps1</div>
+          </div>
+          <div class="card card-spaced">
+            <strong>Demarrage manuel</strong>
+            <div class="code">uvicorn websocket_server:app --host 0.0.0.0 --port 9876
+streamlit run app.py --server.port 8501</div>
+          </div>
+          <div class="callout">
+            Avec la configuration actuelle, .streamlit/secrets.toml pointe vers ws://localhost:9876/ws.
+            Si ce fichier n'existe pas, l'application retombe automatiquement sur ws://localhost:8765/ws.
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Cycle d'un message</h2>
+      <div class="timeline">
+        <div>
+          <strong>Etape A</strong>
+          <p>L'utilisateur tape un message dans la zone de saisie du composant HTML et clique sur Envoyer ou appuie sur Entrée.</p>
+        </div>
+        <div>
+          <strong>Etape B</strong>
+          <p>Le JavaScript envoie un JSON de ce type au serveur : <span class="inline-code">{ type: "message", username, message }</span>.</p>
+        </div>
+        <div>
+          <strong>Etape C</strong>
+          <p>FastAPI lit ce JSON via la WebSocket, reconstruit un payload propre puis exécute une diffusion dans la room concernée.</p>
+        </div>
+        <div>
+          <strong>Etape D</strong>
+          <p>Chaque navigateur reçoit l'événement WebSocket, parse le JSON et ajoute la bulle dans la bonne couleur selon l'auteur du message.</p>
+        </div>
+      </div>
+
+      <div class="code">Navegateur 1
+  -> WebSocket send(JSON)
+  -> serveur FastAPI /ws/{room}
+  -> broadcast a toutes les connexions de la room
+  -> Navegateur 1 et Navegateur 2 recoivent le message</div>
+    </section>
+
+    <section class="section">
+      <h2>Role des fichiers</h2>
+      <div class="files">
+        <article class="file">
+          <strong><code>app.py</code></strong>
+          <p>Configure Streamlit, lit l'URL WebSocket depuis le secret ou le fallback par defaut, affiche les champs de connexion utiles et injecte le client HTML/JavaScript de chat.</p>
+        </article>
+        <article class="file">
+          <strong><code>websocket_server.py</code></strong>
+          <p>Expose le serveur FastAPI, gère les connexions par salon, diffuse les messages et annonce les entrées/sorties des navigateurs.</p>
+        </article>
+        <article class="file">
+          <strong><code>.streamlit/secrets.toml</code></strong>
+          <p>Optionnel. Permet de surcharger l'URL WebSocket sans modifier le code. Ici, il configure ws://localhost:9876/ws.</p>
+        </article>
+        <article class="file">
+          <strong><code>start.ps1</code></strong>
+          <p>Script de lancement Windows. Il lit le secret si disponible, deduit le port WebSocket, puis demarre Uvicorn et Streamlit ensemble.</p>
+        </article>
+        <article class="file">
+          <strong><code>requirements.txt</code></strong>
+          <p>Déclare les dépendances nécessaires : Streamlit, FastAPI et Uvicorn.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Ce qu'il faut retenir</h2>
+      <ul>
+        <li>Streamlit ne transporte pas les messages lui-même : il sert surtout de conteneur d'interface.</li>
+        <li>Le temps réel est assuré par la route WebSocket /ws/{room} du serveur FastAPI.</li>
+        <li>Le demarrage le plus simple sous Windows est .\start.ps1, qui garde le port Uvicorn synchronise avec le secret.</li>
+        <li>L'utilisateur n'a pas a saisir l'adresse WebSocket dans l'interface: elle est lue depuis `.streamlit/secrets.toml`.</li>
+        <li>Le nom de salon sert de clé pour regrouper les navigateurs dans la même conversation.</li>
+        <li>Si un navigateur se déconnecte, le serveur le retire de la liste du salon et diffuse un message système.</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>
